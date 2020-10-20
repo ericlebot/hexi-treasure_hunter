@@ -54,7 +54,7 @@ function play () {
         player.alpha = 0.5;
 
         //Reduce the width of the health bar's inner rectangle by 1 pixel
-        if (healthBar.inner.width > 0) healthBar.inner.width -= 1;
+        if (healthBar.inner.width > 0) healthBar.inner.width -= 5;
 
     } else {
 
@@ -132,15 +132,14 @@ function setup () {
     treasure.pickedUp = false;
     gameScene.addChild(treasure);
 
+    //An array to store all the enemies
+    enemies = [];
+
     //Make the enemies
     let numberOfEnemies = 6,
         spacing = 48,
         xOffset = 150,
-        speed = 2,
         direction = 1;
-
-    //An array to store all the enemies
-    enemies = [];
 
     //Make as many enemies as there are `numberOfEnemies`
     for (let i = 0; i < numberOfEnemies; i++) {
@@ -164,7 +163,7 @@ function setup () {
         //`-1`. `1` means the enemy will move down and `-1` means the enemy will
         //move up. Multiplying `direction` by `speed` determines the enemy's
         //vertical direction
-        enemy.vy = game.randomInt(1, 10) * direction;
+        enemy.vy = game.randomInt(1, 5) * direction;
 
         //Reverse the direction for the next enemy
         direction *= -1;
@@ -177,8 +176,8 @@ function setup () {
     }
 
     //Create the health bar
-    let outerBar = game.rectangle(128, 16, "black"),
-        innerBar = game.rectangle(128, 16, "yellowGreen");
+    let outerBar = game.rectangle(120, 16, "black"),
+        innerBar = game.rectangle(120, 16, "yellowGreen");
 
     //Group the inner and outer bars
     healthBar = game.group(outerBar, innerBar);
@@ -204,8 +203,77 @@ function setup () {
 
     game.arrowControl(player, 5);
 
+    game.keyboard(13).press = () => {
+
+        if (game.state === end) {
+
+            reset();
+
+        }
+
+    };
+
     //set the game state to `play`
     game.state = play;
+}
+
+function reset ()  {
+
+    player.x = 68;
+    player.y = game.canvas.height / 2 - player.halfHeight;
+
+    game.stage.putCenter(treasure, 220, 0);
+    treasure.pickedUp = false;
+
+    game.remove(enemies);
+
+    //Make the enemies
+    let numberOfEnemies = 6,
+        spacing = 48,
+        xOffset = 150,
+        direction = 1;
+
+    //Make as many enemies as there are `numberOfEnemies`
+    for (let i = 0; i < numberOfEnemies; i++) {
+
+        //Each enemy is a red rectangle
+        let enemy = game.rectangle(32, 32, "red");
+
+        //Space each enemey horizontally according to the `spacing` value.
+        //`xOffset` determines the point from the left of the screen
+        //at which the first enemy should be added.
+        let x = spacing * i + xOffset;
+
+        //Give the enemy a random y position
+        let y = game.randomInt(0, game.canvas.height - enemy.height);
+
+        //Set the enemy's direction
+        enemy.x = x;
+        enemy.y = y;
+
+        //Set the enemy's vertical velocity. `direction` will be either `1` or
+        //`-1`. `1` means the enemy will move down and `-1` means the enemy will
+        //move up. Multiplying `direction` by `speed` determines the enemy's
+        //vertical direction
+        enemy.vy = game.randomInt(1, 5) * direction;
+
+        //Reverse the direction for the next enemy
+        direction *= -1;
+
+        //Push the enemy into the `enemies` array
+        enemies.push(enemy);
+
+        //Add the enemy to the `gameScene`
+        gameScene.addChild(enemy);
+    }
+
+    healthBar.inner.width = healthBar.width;
+
+    gameScene.visible = true;
+    gameOverScene.visible = false;
+
+    game.state = play;
+
 }
 
 function load () {
