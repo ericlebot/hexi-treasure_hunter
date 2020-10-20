@@ -13,6 +13,97 @@ function play () {
     game.move(player);
     game.contain(player, game.stage);
 
+    //Set `playerHit` to `false` before checking for a collision
+    let playerHit = false;
+
+    //Loop through all the sprites in the `enemies` array
+    enemies.forEach(enemy => {
+
+        //Move the enemy
+        game.move(enemy);
+
+        //Check the enemy's screen boundaries
+        let enemyHitsEdges = game.contain(enemy, game.stage);
+
+        //If the enemy hits the top or bottom of the stage, reverse
+        //its direction
+        if (enemyHitsEdges) {
+
+            if (enemyHitsEdges.has("top") || enemyHitsEdges.has("bottom")) {
+
+                enemy.vy *= -1;
+
+            }
+
+        }
+
+        //Test for a collision. If any of the enemies are touching
+        //the player, set `playerHit` to `true`
+        if (game.hitTestRectangle(player, enemy)) {
+
+            playerHit = true;
+
+        }
+
+    });
+
+    //If the player is hit...
+    if (playerHit) {
+
+        //Make the player semi-transparent
+        player.alpha = 0.5;
+
+        //Reduce the width of the health bar's inner rectangle by 1 pixel
+        if (healthBar.inner.width > 0) healthBar.inner.width -= 1;
+
+    } else {
+
+        //Make the player fully opaque (non-transparent) if it hasn't been hit
+        player.alpha = 1;
+
+    }
+
+    if (game.hitTestRectangle(player, treasure)) {
+
+        //If the treasure is touching the player, center it over the player
+        treasure.x = player.x + 8;
+        treasure.y = player.y + 8;
+
+        if(!treasure.pickedUp) {
+
+            //If the treasure hasn't already been picked up,
+            //play the `chimes` sound
+            chimes.play();
+            treasure.pickedUp = true;
+        }
+
+    }
+
+    //Does the player have enough health? If the width of the `innerBar`
+    //is less than zero, end the game and display "You lost!"
+    if (healthBar.inner.width === 0) {
+
+        game.state = end;
+        message.content = "You lost!";
+
+    }
+
+    //If the player has brought the treasure to the exit,
+    //end the game and display "You won!"
+    if (game.hitTestRectangle(treasure, exit)) {
+
+        game.state = end;
+        message.content = "You won!";
+
+    }
+
+}
+
+function end () {
+
+    gameScene.visible = false;
+    gameOverScene.visible = true;
+
 }
 
 function setup () {
@@ -73,7 +164,7 @@ function setup () {
         //`-1`. `1` means the enemy will move down and `-1` means the enemy will
         //move up. Multiplying `direction` by `speed` determines the enemy's
         //vertical direction
-        enemy.vy = speed * direction;
+        enemy.vy = game.randomInt(1, 10) * direction;
 
         //Reverse the direction for the next enemy
         direction *= -1;
@@ -111,61 +202,7 @@ function setup () {
     gameOverScene = game.group(message);
     gameOverScene.visible = false;
 
-    //Assign the player's keyboard controllers
-    let leftArrow = game.keyboard(37),
-        upArrow = game.keyboard(38),
-        rightArrow = game.keyboard(39),
-        downArrow = game.keyboard(40);
-
-    //Left arrow key `press` method
-    leftArrow.press = () => {
-        //Change the player's velocity when the key is pressed
-        player.vx = -5;
-        player.vy = 0;
-    };
-
-    //Left arrow key `release` method
-    leftArrow.release = () => {
-        //If the left arrow has been released, and the right arrow isn't down,
-        //and the player isn't moving vertically:
-        //Stop the player
-        if (!rightArrow.isDown && player.vy === 0) {
-            player.vx = 0;
-        }
-    };
-
-    //The up arrow
-    upArrow.press = () => {
-        player.vy = -5;
-        player.vx = 0;
-    };
-    upArrow.release = () => {
-        if (!downArrow.isDown && player.vx === 0) {
-            player.vy = 0;
-        }
-    };
-
-    //The right arrow
-    rightArrow.press = () => {
-        player.vx = 5;
-        player.vy = 0;
-    };
-    rightArrow.release = () => {
-        if (!leftArrow.isDown && player.vy === 0) {
-            player.vx = 0;
-        }
-    };
-
-    //The down arrow
-    downArrow.press = () => {
-        player.vy = 5;
-        player.vx = 0;
-    };
-    downArrow.release = () => {
-        if (!upArrow.isDown && player.vx === 0) {
-            player.vy = 0;
-        }
-    };
+    game.arrowControl(player, 5);
 
     //set the game state to `play`
     game.state = play;
